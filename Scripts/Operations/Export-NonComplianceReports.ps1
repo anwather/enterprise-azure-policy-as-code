@@ -156,8 +156,7 @@ else {
 Write-Information ""
 
 # Set the management portal URL
-$managementPortalUrlBase = $account.Environment.ManagementPortalUrl
-$managementPortalUrlStem = "$($managementPortalUrlBase)#@$($tenantId)/resource"
+$managementPortalUrlStem = "$($account.Environment.ManagementPortalUrl)#@$($tenantId)/resource"
 
 $rawNonCompliantList, $deployedPolicyResources, $scopeTable = Find-AzNonCompliantResources `
     -PacEnvironment $pacEnvironment `
@@ -207,20 +206,19 @@ else {
     foreach ($entry in $rawNonCompliantList) {
         
         #region retrieve and augment the entry properties
-        $entryProperties = $entry.properties
-        $policyAssignmentId = $entryProperties.policyAssignmentId
-        $policyAssignmentName = $entryProperties.policyAssignmentName
-        $policyAssignmentScope = $entryProperties.policyAssignmentScope
-        $policyDefinitionId = $entryProperties.policyDefinitionId
-        $complianceState = $entryProperties.complianceState
-        $policyDefinitionAction = $entryProperties.policyDefinitionAction
-        $policyDefinitionReferenceId = $entryProperties.policyDefinitionReferenceId
+        $policyAssignmentId = $entry.properties.policyAssignmentId
+        $policyAssignmentName = $entry.properties.policyAssignmentName
+        $policyAssignmentScope = $entry.properties.policyAssignmentScope
+        $policyDefinitionId = $entry.properties.policyDefinitionId
+        $complianceState = $entry.properties.complianceState
+        $policyDefinitionAction = $entry.properties.policyDefinitionAction
+        $policyDefinitionReferenceId = $entry.properties.policyDefinitionReferenceId
         if ($null -eq $policyDefinitionReferenceId) {
             $policyDefinitionReferenceId = ""
         }
-        $resourceId = $entryProperties.resourceId
-        $policyDefinitionGroupNames = $entryProperties.policyDefinitionGroupNames
-        $policyDefinitionName = $entryProperties.policyDefinitionName
+        $resourceId = $entry.properties.resourceId
+        $policyDefinitionGroupNames = $entry.properties.policyDefinitionGroupNames
+        $policyDefinitionName = $entry.properties.policyDefinitionName
         $policyDefinition = $null
         $policyDefinitionProperties = @{}
         $category = "|unknown|"
@@ -252,7 +250,7 @@ else {
         if ($policyAssignmentProperties.displayName) {
             $policyAssignmentName = $policyAssignmentProperties.displayName
         }
-        $subscriptionId = $entryProperties.subscriptionId
+        $subscriptionId = $entry.properties.subscriptionId
         $subscriptionScope = "/subscriptions/$($subscriptionId)"
         $subscriptionName = $subscriptionId
         if ($scopeTable.ContainsKey($subscriptionScope)) {

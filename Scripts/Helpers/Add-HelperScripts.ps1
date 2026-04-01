@@ -4,9 +4,6 @@
 $scriptRoot = Split-Path $PSScriptRoot -Parent
 
 # Initialize output stream and preference variables
-$PSDefaultParameterValues = @{
-    "Write-Information:InformationVariable" = "+global:epacInfoStream"
-}
 Clear-Variable -Name epacInfoStream -Scope global -Force -ErrorAction SilentlyContinue
 $Global:epacInfoStream = @()
 $InformationPreference = "Continue"

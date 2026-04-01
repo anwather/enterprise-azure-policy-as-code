@@ -70,6 +70,10 @@ function Build-HydrationDeploymentPlans {
     )
 
 
+    $PSDefaultParameterValues = @{
+        "Write-Information:InformationVariable" = "+global:epacInfoStream"
+    }
+
     Clear-Variable -Name epacInfoStream -Scope global -Force -ErrorAction SilentlyContinue
     $Global:epacInfoStream = @()
 

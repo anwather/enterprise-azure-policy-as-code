@@ -154,14 +154,13 @@ else {
     $collatedByAssignmentId = @{}
     $allPolicyDefinitions = $deployedPolicyResources.policydefinitions.all
     foreach ($entry in $rawNonCompliantList) {
-        $entryProperties = $entry.properties
-        $policyAssignmentId = $entryProperties.policyAssignmentId
-        $policyAssignmentName = $entryProperties.policyAssignmentName
-        $policyAssignmentScope = $entryProperties.policyAssignmentScope
-        $policyDefinitionId = $entryProperties.policyDefinitionId
-        $policyDefinitionReferenceId = $entryProperties.policyDefinitionReferenceId
-        $policyDefinitionAction = $entryProperties.policyDefinitionAction
-        $policyDefinitionName = $entryProperties.policyDefinitionName
+        $policyAssignmentId = $entry.properties.policyAssignmentId
+        $policyAssignmentName = $entry.properties.policyAssignmentName
+        $policyAssignmentScope = $entry.properties.policyAssignmentScope
+        $policyDefinitionId = $entry.properties.policyDefinitionId
+        $policyDefinitionReferenceId = $entry.properties.policyDefinitionReferenceId
+        $policyDefinitionAction = $entry.properties.policyDefinitionAction
+        $policyDefinitionName = $entry.properties.policyDefinitionName
         $policyDefinition = $null
         $policyDefinitionProperties = @{}
         $category = "|unknown|"

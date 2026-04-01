@@ -74,13 +74,12 @@ else {
 Write-ModernSection -Title "Loading Azure Policy Resources" -Indent 0
 $scopeTable = Build-ScopeTableForDeploymentRootScope -PacEnvironment $pacEnvironment
 $deployedPolicyResources = Get-AzPolicyResources -PacEnvironment $pacEnvironment -ScopeTable $scopeTable -SkipRoleAssignments
-$exemptions = $deployedPolicyResources.policyExemptions.managed
 
 Write-ModernSection -Title "Generating Exemption Reports" -Indent 0
 
 Out-PolicyExemptions `
     -PacEnvironment $pacEnvironment `
-    -Exemptions $exemptions `
+    -Exemptions $deployedPolicyResources.policyExemptions.managed `
     -PolicyExemptionsFolder $policyExemptionsFolder `
     -OutputJson `
     -OutputCsv `

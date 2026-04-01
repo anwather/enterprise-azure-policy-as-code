@@ -56,6 +56,10 @@ param (
     [bool] $FailOnExemptionError = $false
 )
 
+$PSDefaultParameterValues = @{
+    "Write-Information:InformationVariable" = "+global:epacInfoStream"
+}
+
 # Dot Source Helper Scripts
 . "$PSScriptRoot/../Helpers/Add-HelperScripts.ps1"
 

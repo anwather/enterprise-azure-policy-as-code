@@ -141,7 +141,6 @@ $remediationOnly = $RemediationOnly.IsPresent
 # $excludeManualPolicyEffect = $true
 # $remediationOnly = $true
 
-$InformationPreference = "Continue"
 $pacEnvironment = Select-PacEnvironment $PacEnvironmentSelector -DefinitionsRootFolder $DefinitionsRootFolder -OutputFolder $OutputFolder -Interactive $Interactive
 $tenantId = $pacEnvironment.tenantId
 $account = Set-AzCloudTenantSubscription -Cloud $pacEnvironment.cloud -TenantId $tenantId -Interactive $pacEnvironment.interactive

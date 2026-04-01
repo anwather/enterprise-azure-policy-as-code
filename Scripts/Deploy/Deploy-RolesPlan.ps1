@@ -45,17 +45,9 @@ param (
     [switch] $Interactive
 )
 
-$PSDefaultParameterValues = @{
-    "Write-Information:InformationVariable" = "+global:epacInfoStream"
-}
-
-Clear-Variable -Name epacInfoStream -Scope global -Force -ErrorAction SilentlyContinue
-$Global:epacInfoStream = @()
-
 # Dot Source Helper Scripts
 . "$PSScriptRoot/../Helpers/Add-HelperScripts.ps1"
 
-$InformationPreference = "Continue"
 $scriptStartTime = Get-Date
 
 # Display welcome header

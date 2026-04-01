@@ -48,7 +48,6 @@ function Update-HydrationStarterKitAssignmentScope {
         [System.Management.Automation.OrderedHashtable]$answers
     )
     # TODO: Add another set that replaces answers with branchflow and environments var as a second set of inputs instead of answers
-    $InformationPreference = "Continue"
     if (!(Test-Path (Split-Path $outputCsv))) {
         New-Item -ItemType Directory -Path (Split-Path $outputCsv) -Force | Out-Null
     }

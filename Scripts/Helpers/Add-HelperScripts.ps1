@@ -3,6 +3,14 @@
 # Define ./Scripts location in repo based on it being the parent of the Helpers directiory in which this script is located
 $scriptRoot = Split-Path $PSScriptRoot -Parent
 
+# Initialize output stream and preference variables
+$PSDefaultParameterValues = @{
+    "Write-Information:InformationVariable" = "+global:epacInfoStream"
+}
+Clear-Variable -Name epacInfoStream -Scope global -Force -ErrorAction SilentlyContinue
+$Global:epacInfoStream = @()
+$InformationPreference = "Continue"
+
 # Load cmdlets
 . "$PSScriptRoot/Add-ErrorMessage.ps1"
 . "$PSScriptRoot/Add-SelectedPacArray.ps1"

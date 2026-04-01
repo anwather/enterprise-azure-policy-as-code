@@ -44,7 +44,6 @@ function Update-HydrationDefinitionFolderStructureByAssignment {
         [System.Management.Automation.OrderedHashtable]
         $FolderOrder
     ) 
-    $InformationPreference = "Continue"
     # TODO: Add a reporting feature to use the keys for Folder Order as organization internal values that tie to the approval folders in GitHub Owners for output logs.
     $psdList = Get-ChildItem $(Join-Path $Definitions "policySetDefinitions") -recurse -file -include "*.json", "*.jsonc"
     $pdList = Get-ChildItem $(Join-Path $Definitions "policyDefinitions") -recurse -file -include "*.json", "*.jsonc"

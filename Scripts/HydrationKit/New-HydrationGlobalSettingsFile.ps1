@@ -101,7 +101,6 @@ function New-HydrationGlobalSettingsFile {
         [bool]$KeepDfcSecurityAssignments
     )
 
-    $InformationPreference = "Continue"
     $mgBaseString = "/providers/Microsoft.Management/managementGroups/"
     if (!(Test-Path $DefinitionsRootFolder)) {
         $null = New-HydrationDefinitionsFolder -DefinitionsRootFolder $DefinitionsRootFolder

@@ -70,19 +70,12 @@ function Build-HydrationDeploymentPlans {
     )
 
 
-    $PSDefaultParameterValues = @{
-        "Write-Information:InformationVariable" = "+global:epacInfoStream"
-    }
-
     Clear-Variable -Name epacInfoStream -Scope global -Force -ErrorAction SilentlyContinue
     $Global:epacInfoStream = @()
 
     # Dot Source Helper Scripts
     # TODO: Not necessary as a function, reinstate when returned to Deploy folder
     # . "$PSScriptRoot/../Helpers/Add-HelperScripts.ps1"
-
-    # Initialize
-    $InformationPreference = "Continue"
 
     $pacEnvironment = Select-PacEnvironment $PacEnvironmentSelector -DefinitionsRootFolder $DefinitionsRootFolder -OutputFolder $OutputFolder -Interactive $Interactive
     $null = Set-AzCloudTenantSubscription -Cloud $pacEnvironment.cloud -TenantId $pacEnvironment.tenantId -Interactive $pacEnvironment.interactive -DeploymentDefaultContext $pacEnvironment.defaultContext

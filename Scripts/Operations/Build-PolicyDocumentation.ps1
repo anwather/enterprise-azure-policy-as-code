@@ -85,7 +85,6 @@ param (
 
 #region Initialize
 
-$InformationPreference = 'Continue'
 $globalSettings = Get-GlobalSettings -DefinitionsRootFolder $DefinitionsRootFolder -OutputFolder $OutputFolder
 $definitionsFolder = $globalSettings.policyDocumentationsFolder
 $selectedDocumentationFolder = $definitionsFolder

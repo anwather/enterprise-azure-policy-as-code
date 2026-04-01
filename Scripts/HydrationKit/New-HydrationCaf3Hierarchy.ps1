@@ -35,7 +35,6 @@ function New-HydrationCaf3Hierarchy {
         [string]
         $Suffix
     )
-    $InformationPreference = "Continue"
     $updatedDestinationRootName = $( -join ($Prefix, $DestinationRootName, $Suffix))
     $mgLists = [ordered]@{
         $updatedDestinationRootName = @("Platform", "LandingZones", "Decommissioned", "Sandbox")

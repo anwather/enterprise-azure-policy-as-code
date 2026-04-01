@@ -36,7 +36,6 @@ function New-SchemaJsonTemplate {
         [switch]
         $SuppressFileCreation
     )
-    $InformationPreference = "Continue"
     $outputPath = $(Join-Path $Output (Get-Date -Format "yyyy-MM-dd") policyDocumentations)
         
     if (!(Test-Path -Path $outputPath)) {

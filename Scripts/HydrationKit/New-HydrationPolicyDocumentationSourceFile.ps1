@@ -91,7 +91,6 @@ function New-HydrationPolicyDocumentationSourceFile {
         [string]
         $AdoWiki
     )
-    $InformationPreference = "Continue"
     $policySets = @()
     $JsonSchemaUri = "https://raw.githubusercontent.com/Azure/enterprise-azure-policy-as-code/main/Schemas/policy-documentation-schema.json"
     $paths = @{

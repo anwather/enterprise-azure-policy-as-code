@@ -55,7 +55,6 @@ function Copy-DefinitionByAssignment {
         [Parameter(Mandatory = $false)]
         $ChangeLogData
     )
-    $InformationPreference = "Continue"
     $defaultCategory = "Unused"
     $OutputPath = Join-Path $Output "NewFolderStructure"
     if (!(Test-Path $OutputPath)) {

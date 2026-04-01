@@ -41,7 +41,6 @@ function Update-HydrationModuleToSupportedVersion {
         $Interactive
     )
     # TODO: Add additional logic from https://github.com/JulianHayward/Azure-MG-Sub-Governance-Reporting/blob/master/pwsh/dev/functions/verifyModules3rd.ps1 and thank Julian for the good code.
-    $InformationPreference = "Continue"
     $onlineModule = Find-Module -name $ModuleName -ErrorAction Stop
     if (!($onlineModule)) {
         Write-Error "Module $ModuleName not found in the PowerShell Gallery. Please install manually."

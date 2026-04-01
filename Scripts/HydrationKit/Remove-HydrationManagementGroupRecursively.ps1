@@ -18,7 +18,6 @@ function Remove-HydrationManagementGroupRecursively {
         $HierarchyRootGroupName       
     ) 
 
-    $InformationPreference = "Continue"
     $fullHierarchy = Get-AzManagementGroupRestMethod -GroupId $HierarchyRootGroupName -Expand  -Recurse 
     Write-Debug "Starting Outer Loop"
     Remove-HydrationChildHierarchy -ChildHierarchy $fullHierarchy.properties.children

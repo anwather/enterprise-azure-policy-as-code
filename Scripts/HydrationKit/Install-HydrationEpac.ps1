@@ -68,7 +68,6 @@ function Install-HydrationEpac {
     Clear-Host
     $sleepTime = 10
     # Define Verbosity
-    $InformationPreference = "Continue"
     if ($TenantIntermediateRoot -eq $(Get-AzContext).Tenant.Id) {
         Write-Error "The Tenant Intermediate Root specified is the same as the current connected Tenant ID. This is not recommended as it can lead to a less secure outcome, and for this reason this script does not support the configuration. Please choose an intermediate root that is not your Tenant Root."
     }

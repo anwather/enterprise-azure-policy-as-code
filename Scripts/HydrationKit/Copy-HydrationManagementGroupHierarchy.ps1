@@ -45,7 +45,6 @@ function Copy-HydrationManagementGroupHierarchy {
         [string]
         $Suffix
     )
-    $InformationPreference = "Continue"
     if (!($Suffix) -and !($Prefix)) {
         Write-Error "You must modify the name with either a Suffix, a Prefix, or both in order to replicate within the current tenant without naming collision errors."
     }

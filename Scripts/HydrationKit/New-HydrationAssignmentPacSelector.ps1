@@ -61,7 +61,6 @@ function New-HydrationAssignmentPacSelector {
         $MGHierarchySuffix
     )
     $sourcePath = Join-Path $Definitions "policyAssignments"
-    $InformationPreference = "Continue"
     foreach ($s in @($sourcePath, $Definitions)) {
         if (!(Test-Path -Path $s)) {
             Write-Error "Path $s does not exist."

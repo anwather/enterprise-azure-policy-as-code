@@ -113,7 +113,6 @@ param (
 
 #region Initialize
 
-$InformationPreference = "Continue"
 $includeAutoAssignedLocal = $IncludeAutoAssigned.IsPresent
 # $includeAutoAssignedLocal = $true # uncomment for debugging
 # $InputPacSelector = "tenant" # uncomment for debugging

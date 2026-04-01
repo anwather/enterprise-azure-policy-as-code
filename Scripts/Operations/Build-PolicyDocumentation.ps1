@@ -86,10 +86,8 @@ param (
 #region Initialize
 
 $globalSettings = Get-GlobalSettings -DefinitionsRootFolder $DefinitionsRootFolder -OutputFolder $OutputFolder
-$definitionsFolder = $globalSettings.policyDocumentationsFolder
-$selectedDocumentationFolder = $definitionsFolder
-$documentationSubfolders = Get-ChildItem -Path $definitionsFolder -Directory -ErrorAction SilentlyContinue
-$pacEnvironments = $globalSettings.pacEnvironments
+$selectedDocumentationFolder = $globalSettings.policyDocumentationsFolder
+$documentationSubfolders = Get-ChildItem -Path $globalSettings.policyDocumentationsFolder -Directory -ErrorAction SilentlyContinue
 $outputPath = "$($globalSettings.outputFolder)/policy-documentation"
 if (-not (Test-Path $outputPath)) {
     New-Item $outputPath -Force -ItemType directory
@@ -168,7 +166,7 @@ foreach ($file in $files) {
         $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", `
             "Process the current file."
         $all = New-Object System.Management.Automation.Host.ChoiceDescription "&All", `
-            "Process remaining files files in folder '$definitionsFolder'."
+            "Process remaining files files in folder '$($globalSettings.policyDocumentationsFolder)'."
         $skip = New-Object System.Management.Automation.Host.ChoiceDescription "&Skip", `
             "Skip processing this file."
         $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $skip, $all)
@@ -204,7 +202,7 @@ foreach ($file in $files) {
 
         # If processing a documentation subfolder, filter entries to matching pacEnvironment
         $selectedFolderName = (Split-Path -Leaf $selectedDocumentationFolder)
-        $inSubfolder = ($selectedDocumentationFolder -ne $definitionsFolder)
+        $inSubfolder = ($selectedDocumentationFolder -ne $globalSettings.policyDocumentationsFolder)
         if ($inSubfolder) {
             # Filter documentPolicySets to only entries where pacEnvironment matches folder name
             if ($null -ne $documentationSpec.documentPolicySets) {
@@ -311,7 +309,7 @@ foreach ($file in $files) {
                         $currentPacEnvironmentSelector = $pacEnvironmentSelector
                         $pacEnvironment = Switch-PacEnvironment `
                             -PacEnvironmentSelector $currentPacEnvironmentSelector `
-                            -PacEnvironments $pacEnvironments `
+                            -PacEnvironments $globalSettings.pacEnvironments `
                             -Interactive $Interactive
                     }
                 }
@@ -415,7 +413,7 @@ foreach ($file in $files) {
                     $currentPacEnvironmentSelector = $pacEnvironmentSelector
                     $pacEnvironment = Switch-PacEnvironment `
                         -PacEnvironmentSelector $currentPacEnvironmentSelector `
-                        -PacEnvironments $pacEnvironments `
+                        -PacEnvironments $globalSettings.pacEnvironments `
                         -Interactive $Interactive
                 }
 
@@ -516,7 +514,7 @@ foreach ($file in $files) {
                     -DocumentationSpecification $documentationSpecification `
                     -AssignmentsByEnvironment $assignmentsByEnvironment `
                     -IncludeManualPolicies:$IncludeManualPolicies `
-                    -PacEnvironments $pacEnvironments ` `
+                    -PacEnvironments $globalSettings.pacEnvironments ` `
                     -WikiClonePat:$WikiClonePat `
                     -WikiSPN:$WikiSPN
             }
@@ -549,7 +547,7 @@ foreach ($file in $files) {
             }
             $pacEnvironment = Switch-PacEnvironment `
                 -PacEnvironmentSelector $pacEnvironmentSelector `
-                -PacEnvironments $pacEnvironments `
+                -PacEnvironments $globalSettings.pacEnvironments `
                 -Interactive $Interactive
 
             # Retrieve Policies and PolicySets for current pacEnvironment from cache or from Azure
@@ -830,7 +828,7 @@ foreach ($file in $files) {
                     -DocumentationSpecification $documentationSpecification `
                     -AssignmentsByEnvironment $assignmentsByEnvironment `
                     -IncludeManualPolicies:$IncludeManualPolicies `
-                    -PacEnvironments $pacEnvironments  `
+                    -PacEnvironments $globalSettings.pacEnvironments  `
                     -WikiClonePat:$WikiClonePat `
                     -WikiSPN:$WikiSPN
             }

@@ -49,8 +49,7 @@ else {
 Write-Information ""
 
 # Get the root scope for the Policy Definitions
-$policyDefinitionsScopes = $pacEnvironment.policyDefinitionsScopes
-$deploymentRootScope = $policyDefinitionsScopes[0]
+$deploymentRootScope = $pacEnvironment.policyDefinitionsScopes[0]
 
 
 Write-Information "==================================================================================================="

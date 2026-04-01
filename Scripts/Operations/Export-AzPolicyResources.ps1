@@ -118,7 +118,6 @@ $includeAutoAssignedLocal = $IncludeAutoAssigned.IsPresent
 # $InputPacSelector = "tenant" # uncomment for debugging
 
 $globalSettings = Get-GlobalSettings -DefinitionsRootFolder $DefinitionsRootFolder -OutputFolder $OutputFolder -InputFolder $inputFolder
-$pacEnvironments = $globalSettings.pacEnvironments
 $OutputFolder = $globalSettings.outputFolder
 $exportFolder = "$($OutputFolder)/export"
 $rawFolder = "$($exportFolder)/RawDefinitions"
@@ -373,7 +372,7 @@ else {
 
 foreach ($pacSelector in $globalSettings.pacEnvironmentSelectors) {
 
-    $pacEnvironment = $pacEnvironments.$pacSelector
+    $pacEnvironment = $globalSettings.pacEnvironments.$pacSelector
 
     if (($InputPacSelector -eq $pacSelector -or $InputPacSelector -eq '*') -and $policyResourcesByPacSelector.ContainsKey($pacSelector)) {
 

@@ -142,8 +142,7 @@ $remediationOnly = $RemediationOnly.IsPresent
 # $remediationOnly = $true
 
 $pacEnvironment = Select-PacEnvironment $PacEnvironmentSelector -DefinitionsRootFolder $DefinitionsRootFolder -OutputFolder $OutputFolder -Interactive $Interactive
-$tenantId = $pacEnvironment.tenantId
-$account = Set-AzCloudTenantSubscription -Cloud $pacEnvironment.cloud -TenantId $tenantId -Interactive $pacEnvironment.interactive
+$account = Set-AzCloudTenantSubscription -Cloud $pacEnvironment.cloud -TenantId $pacEnvironment.tenantId -Interactive $pacEnvironment.interactive
 
 # Telemetry
 if ($pacEnvironment.telemetryEnabled) {
@@ -156,7 +155,7 @@ else {
 Write-Information ""
 
 # Set the management portal URL
-$managementPortalUrlStem = "$($account.Environment.ManagementPortalUrl)#@$($tenantId)/resource"
+$managementPortalUrlStem = "$($account.Environment.ManagementPortalUrl)#@$($pacEnvironment.tenantId)/resource"
 
 $rawNonCompliantList, $deployedPolicyResources, $scopeTable = Find-AzNonCompliantResources `
     -PacEnvironment $pacEnvironment `
@@ -171,15 +170,13 @@ $rawNonCompliantList, $deployedPolicyResources, $scopeTable = Find-AzNonComplian
 Write-ModernHeader -Title "Exporting Non-Compliance Reports" -Subtitle "Collating resources into simplified lists"
 Write-ModernSection -Title "Processing Compliance Data" -Indent 0
 
-$total = $rawNonCompliantList.Count
-if ($total -eq 0) {
+if ($rawNonCompliantList.Count -eq 0) {
     Write-ModernStatus -Message "No non-compliant resources found" -Status "success" -Indent 2
 }
 else {
-    Write-ModernStatus -Message "Processing $total non-compliant records" -Status "processing" -Indent 2
+    Write-ModernStatus -Message "Processing $($rawNonCompliantList.Count) non-compliant records" -Status "processing" -Indent 2
 
     #source
-    $allPolicyDefinitions = $deployedPolicyResources.policydefinitions.all
     #$allPolicyAssignments = $deployedPolicyResources.policyassignments.managed - Why don't you work??
 
     Set-Variable -Name allPolicyAssignments -Value $deployedPolicyResources.policyassignments.managed
@@ -206,28 +203,21 @@ else {
     foreach ($entry in $rawNonCompliantList) {
         
         #region retrieve and augment the entry properties
-        $policyAssignmentId = $entry.properties.policyAssignmentId
         $policyAssignmentName = $entry.properties.policyAssignmentName
-        $policyAssignmentScope = $entry.properties.policyAssignmentScope
-        $policyDefinitionId = $entry.properties.policyDefinitionId
-        $complianceState = $entry.properties.complianceState
-        $policyDefinitionAction = $entry.properties.policyDefinitionAction
         $policyDefinitionReferenceId = $entry.properties.policyDefinitionReferenceId
         if ($null -eq $policyDefinitionReferenceId) {
             $policyDefinitionReferenceId = ""
         }
-        $resourceId = $entry.properties.resourceId
-        $policyDefinitionGroupNames = $entry.properties.policyDefinitionGroupNames
         $policyDefinitionName = $entry.properties.policyDefinitionName
         $policyDefinition = $null
         $policyDefinitionProperties = @{}
         $category = "|unknown|"
         $policyDefinition = $null
-        if ($allPolicyDefinitions.ContainsKey($policyDefinitionId)) {
-            $policyDefinition = $allPolicyDefinitions.$policyDefinitionId
+        if ($deployedPolicyResources.policydefinitions.all.ContainsKey($entry.properties.policyDefinitionId)) {
+            $policyDefinition = $deployedPolicyResources.policydefinitions.all.($entry.properties.policyDefinitionId)
         }
         else {
-            $policyDefinition = Get-AzPolicyDefinition -Id $policyDefinitionId
+            $policyDefinition = Get-AzPolicyDefinition -Id $entry.properties.policyDefinitionId
         }
         $policyDefinitionProperties = Get-PolicyResourceProperties $policyDefinition
         if ($policyDefinitionProperties.displayName) {
@@ -240,23 +230,22 @@ else {
             }
         }
         $policyAssignment = $null
-        if ($allPolicyAssignments.ContainsKey($policyAssignmentId)) {
-            $policyAssignment = $allPolicyAssignments.$policyAssignmentId
+        if ($allPolicyAssignments.ContainsKey($entry.properties.policyAssignmentId)) {
+            $policyAssignment = $allPolicyAssignments.($entry.properties.policyAssignmentId)
         }
         else {
-            $policyAssignment = Get-AzPolicyAssignment -Id $policyAssignmentId
+            $policyAssignment = Get-AzPolicyAssignment -Id $entry.properties.policyAssignmentId
         }
         $policyAssignmentProperties = Get-PolicyResourceProperties $policyAssignment
         if ($policyAssignmentProperties.displayName) {
             $policyAssignmentName = $policyAssignmentProperties.displayName
         }
-        $subscriptionId = $entry.properties.subscriptionId
-        $subscriptionScope = "/subscriptions/$($subscriptionId)"
-        $subscriptionName = $subscriptionId
+        $subscriptionScope = "/subscriptions/$($entry.properties.subscriptionId)"
+        $subscriptionName = $entry.properties.subscriptionId
         if ($scopeTable.ContainsKey($subscriptionScope)) {
             $subscriptionName = $scopeTable.$subscriptionScope.displayName
         }
-        $splits = $resourceId -split "/"
+        $splits = $entry.properties.resourceId -split "/"
         $segments = $splits.Length
         $resourceGroup = ""
         $resourceType = ""
@@ -286,29 +275,29 @@ else {
                 $resourceType = "resourceGroups"
             }
         }
-        $managementPortalUrl = "$($managementPortalUrlStem)$($resourceId)"
+        $managementPortalUrl = "$($managementPortalUrlStem)$($entry.properties.resourceId)"
         #endregion retrieve and augment the entry properties
 
         #region create full details list hash table
-        $groupNames = $policyDefinitionGroupNames -join $separator
+        $groupNames = $entry.properties.policyDefinitionGroupNames -join $separator
         $fullDetails = @{
             assignmentName      = $policyAssignmentName
-            assignmentScope     = $policyAssignmentScope
-            assignmentId        = $policyAssignmentId
+            assignmentScope     = $entry.properties.policyAssignmentScope
+            assignmentId        = $entry.properties.policyAssignmentId
             referenceId         = $policyDefinitionReferenceId
             category            = $category
             policyName          = $policyDefinitionName
-            policyId            = $policyDefinitionId
-            resourceId          = $resourceId
-            subscriptionId      = $subscriptionId
+            policyId            = $entry.properties.policyDefinitionId
+            resourceId          = $entry.properties.resourceId
+            subscriptionId      = $entry.properties.subscriptionId
             subscriptionName    = $subscriptionName
             resourceGroup       = $resourceGroup
             resourceType        = $resourceType
             resourceName        = $resourceName
             resourceQualifier   = $resourceQualifier
             managementPortalUrl = $managementPortalUrl
-            effect              = $policyDefinitionAction
-            state               = $complianceState
+            effect              = $entry.properties.policyDefinitionAction
+            state               = $entry.properties.complianceState
             groupNames          = $groupNames
         }
         $null = $fullDetailsList.Add($fullDetails)
@@ -317,8 +306,8 @@ else {
         #region calculate regular details list and summary list by Policy
         $summary = @{}
         $detailsByResourceId = @{}
-        if ($collatedByPolicyId.ContainsKey($policyDefinitionId)) {
-            $valuesForPolicyId = $collatedByPolicyId.$policyDefinitionId
+        if ($collatedByPolicyId.ContainsKey($entry.properties.policyDefinitionId)) {
+            $valuesForPolicyId = $collatedByPolicyId.($entry.properties.policyDefinitionId)
             $summary = $valuesForPolicyId.summary
             $detailsByResourceId = $valuesForPolicyId.detailsByResourceId
         }
@@ -326,7 +315,7 @@ else {
             $summary = [ordered]@{
                 category     = $category
                 policyName   = $policyDefinitionName
-                policyId     = $policyDefinitionId
+                policyId     = $entry.properties.policyDefinitionId
                 nonCompliant = 0
                 unknown      = 0
                 notStarted   = 0
@@ -336,31 +325,31 @@ else {
                 assignments  = @{}
                 groupNames   = @{}
             }
-            $null = $collatedByPolicyId.Add($policyDefinitionId, @{
+            $null = $collatedByPolicyId.Add($entry.properties.policyDefinitionId, @{
                     summary             = $summary
                     detailsByResourceId = $detailsByResourceId
                 }
             )
             $null = $summaryListByPolicy.Add($summary)
         }
-        if ($detailsByResourceId.ContainsKey($resourceId)) {
+        if ($detailsByResourceId.ContainsKey($entry.properties.resourceId)) {
             # reconcile the details
-            $details = $detailsByResourceId.$resourceId
+            $details = $detailsByResourceId.($entry.properties.resourceId)
 
             # Union the policy assignment ids and policy definition group names for details AND summary
-            $summary.assignments[$policyAssignmentId] = $true
+            $summary.assignments[$entry.properties.policyAssignmentId] = $true
             $summaryGroupNames = $summary.groupNames
-            $details.assignments[$policyAssignmentId] = $true
+            $details.assignments[$entry.properties.policyAssignmentId] = $true
             $detailsGroupNames = $details.groupNames
-            foreach ($policyDefinitionGroupName in $policyDefinitionGroupNames) {
+            foreach ($policyDefinitionGroupName in $entry.properties.policyDefinitionGroupNames) {
                 $summaryGroupNames[$policyDefinitionGroupName] = $true
                 $detailsGroupNames[$policyDefinitionGroupName] = $true
             }
 
             # Update the compliance state if it is more severe than the current state (NonCompliant > Unknown > Exempt > Conflicting > NotStarted  > Error)
-            if ($details.State -ne $complianceState) {
+            if ($details.State -ne $entry.properties.complianceState) {
                 $currentDetailsState = $details.State
-                if ($complianceState -ne "Exempt" -and $complianceState -ne "NotStarted") {
+                if ($entry.properties.complianceState -ne "Exempt" -and $entry.properties.complianceState -ne "NotStarted") {
                     switch ($currentDetailsState) {
                         NonCompliant {
                             $summary.nonCompliant--
@@ -381,7 +370,7 @@ else {
                             $summary.error--
                         }
                     }
-                    switch ($complianceState) {
+                    switch ($entry.properties.complianceState) {
                         NonCompliant {
                             $summary.nonCompliant++
                         }
@@ -401,13 +390,13 @@ else {
                             $summary.error++
                         }
                     }
-                    $details.State = $complianceState
+                    $details.State = $entry.properties.complianceState
                 }
             }
         }
         else {
             # Increment statistics in summary
-            switch ($complianceState) {
+            switch ($entry.properties.complianceState) {
                 NonCompliant {
                     $summary.nonCompliant++
                 }
@@ -432,11 +421,11 @@ else {
             $details = [ordered]@{
                 category            = $category
                 policyName          = $policyDefinitionName
-                policyId            = $policyDefinitionId
-                effect              = $policyDefinitionAction
-                state               = $complianceState
-                resourceId          = $resourceId
-                subscriptionId      = $subscriptionId
+                policyId            = $entry.properties.policyDefinitionId
+                effect              = $entry.properties.policyDefinitionAction
+                state               = $entry.properties.complianceState
+                resourceId          = $entry.properties.resourceId
+                subscriptionId      = $entry.properties.subscriptionId
                 subscriptionName    = $subscriptionName
                 resourceGroup       = $resourceGroup
                 resourceType        = $resourceType
@@ -448,17 +437,17 @@ else {
             }
 
             # Union the policy assignment ids and policy definition group names for details AND summary
-            $summary.assignments[$policyAssignmentId] = $true
+            $summary.assignments[$entry.properties.policyAssignmentId] = $true
             $summaryGroupNames = $summary.groupNames
-            $details.assignments[$policyAssignmentId] = $true
+            $details.assignments[$entry.properties.policyAssignmentId] = $true
             $detailsGroupNames = $details.groupNames
-            foreach ($policyDefinitionGroupName in $policyDefinitionGroupNames) {
+            foreach ($policyDefinitionGroupName in $entry.properties.policyDefinitionGroupNames) {
                 $summaryGroupNames[$policyDefinitionGroupName] = $true
                 $detailsGroupNames[$policyDefinitionGroupName] = $true
             }
 
             $null = $detailsListByPolicy.Add($details)
-            $null = $detailsByResourceId.Add($resourceId, $details)
+            $null = $detailsByResourceId.Add($entry.properties.resourceId, $details)
 
         }
         #endregion calculate regular details list and summary list by Policy
@@ -466,15 +455,15 @@ else {
         #region calculate regular summary and details list by Resource
         $summary = @{}
         $detailsByPolicyId = @{}
-        if ($collatedByResourceId.ContainsKey($resourceId)) {
-            $valueForResourceId = $collatedByResourceId.$resourceId
+        if ($collatedByResourceId.ContainsKey($entry.properties.resourceId)) {
+            $valueForResourceId = $collatedByResourceId.($entry.properties.resourceId)
             $summary = $valueForResourceId.summary
             $detailsByPolicyId = $valueForResourceId.detailsByPolicyId
         }
         else {
             $summary = [ordered]@{
-                resourceId          = $resourceId
-                subscriptionId      = $subscriptionId
+                resourceId          = $entry.properties.resourceId
+                subscriptionId      = $entry.properties.subscriptionId
                 subscriptionName    = $subscriptionName
                 resourceGroup       = $resourceGroup
                 resourceType        = $resourceType
@@ -488,19 +477,19 @@ else {
                 conflicting         = 0
                 error               = 0
             }
-            $null = $collatedByResourceId.Add($resourceId, @{
+            $null = $collatedByResourceId.Add($entry.properties.resourceId, @{
                     summary           = $summary
                     detailsByPolicyId = $detailsByPolicyId
                 }
             )
             $null = $summaryListByResource.Add($summary)
         }
-        if ($detailsByPolicyId.ContainsKey($policyDefinitionId)) {
-            $details = $detailsByPolicyId.$policyDefinitionId
+        if ($detailsByPolicyId.ContainsKey($entry.properties.policyDefinitionId)) {
+            $details = $detailsByPolicyId.($entry.properties.policyDefinitionId)
             # Update the compliance state if it is more severe than the current state (NonCompliant > Unknown > Exempt > Conflicting > NotStarted  > Error)
-            if ($details.State -ne $complianceState) {
+            if ($details.State -ne $entry.properties.complianceState) {
                 $currentDetailsState = $details.State
-                if ($complianceState -ne "Exempt" -and $complianceState -ne "NotStarted") {
+                if ($entry.properties.complianceState -ne "Exempt" -and $entry.properties.complianceState -ne "NotStarted") {
                     switch ($currentDetailsState) {
                         NonCompliant {
                             $summary.nonCompliant--
@@ -521,7 +510,7 @@ else {
                             $summary.error--
                         }
                     }
-                    switch ($complianceState) {
+                    switch ($entry.properties.complianceState) {
                         NonCompliant {
                             $summary.nonCompliant++
                         }
@@ -541,13 +530,13 @@ else {
                             $summary.error++
                         }
                     }
-                    $details.State = $complianceState
+                    $details.State = $entry.properties.complianceState
                 }
             }
         }
         else {
             # increment statistics in summary
-            switch ($complianceState) {
+            switch ($entry.properties.complianceState) {
                 NonCompliant {
                     $summary.nonCompliant++
                 }
@@ -570,8 +559,8 @@ else {
 
             #create a new details entry
             $details = [ordered]@{
-                resourceId          = $resourceId
-                subscriptionId      = $subscriptionId
+                resourceId          = $entry.properties.resourceId
+                subscriptionId      = $entry.properties.subscriptionId
                 subscriptionName    = $subscriptionName
                 resourceGroup       = $resourceGroup
                 resourceType        = $resourceType
@@ -580,23 +569,23 @@ else {
                 managementPortalUrl = $managementPortalUrl
                 category            = $category
                 policyName          = $policyDefinitionName
-                policyId            = $policyDefinitionId
-                effect              = $policyDefinitionAction
-                state               = $complianceState
+                policyId            = $entry.properties.policyDefinitionId
+                effect              = $entry.properties.policyDefinitionAction
+                state               = $entry.properties.complianceState
             }
             
             $null = $detailsListByResource.Add($details)
-            $null = $detailsByPolicyId.Add($policyDefinitionId, $details)
+            $null = $detailsByPolicyId.Add($entry.properties.policyDefinitionId, $details)
         }
         #endregion calculate summary list by Resource
 
         $counter++
         if ($counter % 5000 -eq 0) {
-            Write-ModernProgress -Current $counter -Total $total -Activity "Processing compliance records" -Indent 4
+            Write-ModernProgress -Current $counter -Total $rawNonCompliantList.Count -Activity "Processing compliance records" -Indent 4
         }
     }
     if ($counter % 5000 -ne 0) {
-        Write-ModernProgress -Current $counter -Total $total -Activity "Processing compliance records" -Indent 4
+        Write-ModernProgress -Current $counter -Total $rawNonCompliantList.Count -Activity "Processing compliance records" -Indent 4
     }
 
     Write-ModernSection -Title "Output CSV files" -Indent 0

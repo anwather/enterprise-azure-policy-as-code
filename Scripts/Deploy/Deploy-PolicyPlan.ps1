@@ -86,16 +86,15 @@ else {
     Write-ModernStatus -Message "Telemetry is disabled" -Status "info" -Indent 2
 }
 
-$planFile = $pacEnvironment.policyPlanInputFile
-$plan = Get-DeploymentPlan -PlanFile $planFile
+$plan = Get-DeploymentPlan -PlanFile $pacEnvironment.policyPlanInputFile
 if ($null -eq $plan) {
     Write-ModernSection -Title "Deployment Status" -Color Red
-    Write-ModernStatus -Message "Plan file '$planFile' does not exist, skipping Policy resource deployment" -Status "error" -Indent 2
+    Write-ModernStatus -Message "Plan file '$($pacEnvironment.policyPlanInputFile)' does not exist, skipping Policy resource deployment" -Status "error" -Indent 2
     exit
 }
 else {
     Write-ModernSection -Title "Deployment Plan Loaded" -Color Green
-    Write-ModernStatus -Message "Plan file: $planFile" -Status "success" -Indent 2
+    Write-ModernStatus -Message "Plan file: $($pacEnvironment.policyPlanInputFile)" -Status "success" -Indent 2
     Write-ModernStatus -Message "Plan created on: $($plan.createdOn)" -Status "info" -Indent 2
 
     #region delete exemptions, assignment, definitions
@@ -219,7 +218,7 @@ else {
     
     # Display completion summary
     Write-ModernSection -Title "Deployment Complete" -Color Green
-    Write-ModernStatus -Message "Plan file: $planFile" -Status "success" -Indent 2
+    Write-ModernStatus -Message "Plan file: $($pacEnvironment.policyPlanInputFile)" -Status "success" -Indent 2
     Write-ModernStatus -Message "Execution time: $($executionTime.ToString('mm\:ss'))" -Status "info" -Indent 2
     Write-ModernStatus -Message "All policy resources have been successfully deployed" -Status "success" -Indent 2
 }

@@ -75,26 +75,22 @@ else {
     Write-ModernStatus -Message "Telemetry is disabled" -Status "info" -Indent 2
 }
 
-$planFile = $pacEnvironment.rolesPlanInputFile
-$plan = Get-DeploymentPlan -PlanFile $planFile -AsHashTable
+$plan = Get-DeploymentPlan -PlanFile $pacEnvironment.rolesPlanInputFile -AsHashTable
 
 if ($null -eq $plan) {
     Write-ModernSection -Title "Plan File Not Found" -Color Red
-    Write-ModernStatus -Message "Plan file $planFile does not exist" -Status "error" -Indent 2
+    Write-ModernStatus -Message "Plan file $($pacEnvironment.rolesPlanInputFile) does not exist" -Status "error" -Indent 2
     Write-ModernStatus -Message "Role assignments deployment will be skipped" -Status "warning" -Indent 2
     return
 }
 
 Write-ModernSection -Title "Role Assignment Plan Overview" -Color Blue
-Write-ModernStatus -Message "Plan file: $planFile" -Status "info" -Indent 2
+Write-ModernStatus -Message "Plan file: $($pacEnvironment.rolesPlanInputFile)" -Status "info" -Indent 2
 Write-ModernStatus -Message "Plan created: $($plan.createdOn)" -Status "info" -Indent 2
 
-$addedRoleAssignments = $plan.roleAssignments.added
-$updatedRoleAssignments = $plan.roleAssignments.updated 
-$removedRoleAssignments = $plan.roleAssignments.removed
-if ($removedRoleAssignments.psbase.Count -gt 0) {
-    Write-ModernSection -Title "Removing Obsolete Role Assignments ($($removedRoleAssignments.psbase.Count) items)" -Color Red
-    foreach ($roleAssignment in $removedRoleAssignments) {
+if ($plan.roleAssignments.removed.psbase.Count -gt 0) {
+    Write-ModernSection -Title "Removing Obsolete Role Assignments ($($plan.roleAssignments.removed.psbase.Count) items)" -Color Red
+    foreach ($roleAssignment in $plan.roleAssignments.removed) {
         $roleDisplayText = "`n      Principal: $($roleAssignment.principalId)`n      Role: $($roleAssignment.roleDisplayName)`n      Scope: $($roleAssignment.scope)"
         Write-ModernStatus -Message "Removing Role Assignment: $roleDisplayText" -Status "pending" -Indent 2
         if (!$roleAssignment.crossTenant) {
@@ -112,12 +108,12 @@ if ($removedRoleAssignments.psbase.Count -gt 0) {
     }
 }
 
-if ($addedRoleAssignments.psbase.Count -gt 0) {
-    Write-ModernSection -Title "Adding New Role Assignments ($($addedRoleAssignments.psbase.Count) items)" -Color Green
+if ($plan.roleAssignments.added.psbase.Count -gt 0) {
+    Write-ModernSection -Title "Adding New Role Assignments ($($plan.roleAssignments.added.psbase.Count) items)" -Color Green
 
     # Get identities for policy assignments from plan or by calling the REST API to retrieve the Policy Assignment
     $assignmentById = @{}
-    foreach ($roleAssignment in $addedRoleAssignments) {
+    foreach ($roleAssignment in $plan.roleAssignments.added) {
         $principalId = $roleAssignment.properties.principalId
         $policyAssignmentId = $roleAssignment.assignmentId
         if ($null -eq $principalId) {
@@ -154,11 +150,11 @@ if ($addedRoleAssignments.psbase.Count -gt 0) {
         Set-AzRoleAssignmentRestMethod -RoleAssignment $roleAssignment -PacEnvironment $pacEnvironment
     }
 }
-if ($updatedRoleAssignments.psbase.Count -gt 0) {
-    Write-ModernSection -Title "Updating Role Assignments ($($updatedRoleAssignments.psbase.Count) items)" -Color Yellow
+if ($plan.roleAssignments.updated.psbase.Count -gt 0) {
+    Write-ModernSection -Title "Updating Role Assignments ($($plan.roleAssignments.updated.psbase.Count) items)" -Color Yellow
 
     # Get identities for policy assignments from plan or by calling the REST API to retrieve the Policy Assignment
-    foreach ($roleAssignment in $updatedRoleAssignments) {
+    foreach ($roleAssignment in $plan.roleAssignments.updated) {
         Write-ModernStatus -Message "Updating role assignment:`n      Principal: $principalId`n      Role: $($roleAssignment.roleDisplayName)`n      Scope: $($roleAssignment.scope)" -Status "pending" -Indent 2
         Set-AzRoleAssignmentRestMethod -RoleAssignment $roleAssignment -PacEnvironment $pacEnvironment
     }
@@ -170,7 +166,7 @@ $executionTime = $scriptEndTime - $scriptStartTime
     
 # Display completion summary
 Write-ModernSection -Title "Deployment Complete" -Color Green
-Write-ModernStatus -Message "Plan file: $planFile" -Status "success" -Indent 2
-Write-ModernCountSummary -Title "Role Assignment Changes" -Added $addedRoleAssignments.psbase.Count -Updated $updatedRoleAssignments.psbase.Count -Removed $removedRoleAssignments.psbase.Count -Indent 2
+Write-ModernStatus -Message "Plan file: $($pacEnvironment.rolesPlanInputFile)" -Status "success" -Indent 2
+Write-ModernCountSummary -Title "Role Assignment Changes" -Added $plan.roleAssignments.added.psbase.Count -Updated $plan.roleAssignments.updated.psbase.Count -Removed $plan.roleAssignments.removed.psbase.Count -Indent 2
 Write-ModernStatus -Message "Execution time: $($executionTime.ToString('mm\:ss'))" -Status "info" -Indent 2
 Write-ModernStatus -Message "All role assignments have been successfully deployed" -Status "success" -Indent 2

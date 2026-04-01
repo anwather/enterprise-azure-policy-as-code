@@ -761,9 +761,8 @@ if ($policyObject) {
             Write-Error "'global-settings.jconc' file found in the 'Definitions' folder."
             exit 1
         }
-        $pacEnvironments = $globalSettingsContent.PacEnvironments
-        if ($pacEnvironments.pacSelector -contains "$PacSelector") {
-            foreach ($environment in $pacEnvironments) {
+        if ($globalSettingsContent.PacEnvironments.pacSelector -contains "$PacSelector") {
+            foreach ($environment in $globalSettingsContent.PacEnvironments) {
                 if ($environment.pacSelector -eq "$PacSelector") {
                     $tempScope = $environment.deploymentRootScope
                     $assignmentObject.children.scope | Add-Member -MemberType NoteProperty -Name "$PacSelector" -Value @("$tempScope")

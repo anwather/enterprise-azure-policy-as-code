@@ -144,28 +144,20 @@ Write-Information "Collating non-compliant resources by Assignment Id and (if Po
 Write-Information "==================================================================================================="
 
 
-$total = $rawNonCompliantList.Count
-if ($total -eq 0) {
+if ($rawNonCompliantList.Count -eq 0) {
     Write-Information "No non-compliant resources found - no remediation tasks created"
 }
 else {
-    Write-Information "Processing $total non-compliant resources"
+    Write-Information "Processing $($rawNonCompliantList.Count) non-compliant resources"
 
     $collatedByAssignmentId = @{}
-    $allPolicyDefinitions = $deployedPolicyResources.policydefinitions.all
     foreach ($entry in $rawNonCompliantList) {
-        $policyAssignmentId = $entry.properties.policyAssignmentId
-        $policyAssignmentName = $entry.properties.policyAssignmentName
-        $policyAssignmentScope = $entry.properties.policyAssignmentScope
-        $policyDefinitionId = $entry.properties.policyDefinitionId
-        $policyDefinitionReferenceId = $entry.properties.policyDefinitionReferenceId
-        $policyDefinitionAction = $entry.properties.policyDefinitionAction
         $policyDefinitionName = $entry.properties.policyDefinitionName
         $policyDefinition = $null
         $policyDefinitionProperties = @{}
         $category = "|unknown|"
-        if ($allPolicyDefinitions.ContainsKey($policyDefinitionId)) {
-            $policyDefinition = $allPolicyDefinitions.$policyDefinitionId
+        if ($deployedPolicyResources.policydefinitions.all.ContainsKey($entry.properties.policyDefinitionId)) {
+            $policyDefinition = $deployedPolicyResources.policydefinitions.all.($entry.properties.policyDefinitionId)
             $policyDefinitionProperties = Get-PolicyResourceProperties $policyDefinition
             if ($policyDefinitionProperties.displayName) {
                 $policyDefinitionName = $policyDefinitionProperties.displayName
@@ -177,15 +169,15 @@ else {
                 }
             }
         }
-        $taskName = "$policyAssignmentName-$(New-Guid)"
-        $shortScope = $policyAssignmentScope -replace "/providers/microsoft.management", ""
+        $taskName = "$($entry.properties.policyAssignmentName)-$(New-Guid)"
+        $shortScope = $entry.properties.policyAssignmentScope -replace "/providers/microsoft.management", ""
         $parametersSplat = $null
-        if ($policyDefinitionReferenceId -and $policyDefinitionReferenceId -ne "") {
+        if ($entry.properties.policyDefinitionReferenceId -and $entry.properties.policyDefinitionReferenceId -ne "") {
             $parametersSplat = [ordered]@{
                 Name                        = $taskName
-                Scope                       = $policyAssignmentScope
-                PolicyAssignmentId          = $policyAssignmentId
-                PolicyDefinitionReferenceId = $policyDefinitionReferenceId
+                Scope                       = $entry.properties.policyAssignmentScope
+                PolicyAssignmentId          = $entry.properties.policyAssignmentId
+                PolicyDefinitionReferenceId = $entry.properties.policyDefinitionReferenceId
                 ResourceDiscoveryMode       = "ExistingNonCompliant"
                 ResourceCount               = 50000
                 ParallelDeploymentCount     = 30
@@ -194,24 +186,24 @@ else {
         else {
             $parametersSplat = [ordered]@{
                 Name                    = $taskName
-                Scope                   = $policyAssignmentScope
-                PolicyAssignmentId      = $policyAssignmentId
+                Scope                   = $entry.properties.policyAssignmentScope
+                PolicyAssignmentId      = $entry.properties.policyAssignmentId
                 ResourceDiscoveryMode   = "ExistingNonCompliant"
                 ResourceCount           = 50000
                 ParallelDeploymentCount = 30
             }
         }
 
-        $key = "$policyAssignmentId|$policyDefinitionReferenceId"
+        $key = "$($entry.properties.policyAssignmentId)|$($entry.properties.policyDefinitionReferenceId)"
         if (-not $collatedByAssignmentId.ContainsKey($key)) {
             $remediationEntry = @{
-                policyAssignmentId          = $policyAssignmentId
-                policyAssignmentName        = $policyAssignmentName
+                policyAssignmentId          = $entry.properties.policyAssignmentId
+                policyAssignmentName        = $entry.properties.policyAssignmentName
                 shortScope                  = $shortScope
-                policyDefinitionReferenceId = $policyDefinitionReferenceId
+                policyDefinitionReferenceId = $entry.properties.policyDefinitionReferenceId
                 category                    = $category
                 policyDefinitionName        = $policyDefinitionName
-                policyDefinitionAction      = $policyDefinitionAction
+                policyDefinitionAction      = $entry.properties.policyDefinitionAction
                 resourceCount               = 1
                 parametersSplat             = $parametersSplat
             }

@@ -162,11 +162,10 @@ $exemptions = @{
     numberOfChanges = 0
     numberUnchanged = 0
 }
-$pacOwnerId = $pacEnvironment.pacOwnerId
 $timestamp = Get-Date -AsUTC -Format "u"
 $policyPlan = @{
     createdOn            = $timestamp
-    pacOwnerId           = $pacOwnerId
+    pacOwnerId           = $pacEnvironment.pacOwnerId
     policyDefinitions    = $policyDefinitions
     policySetDefinitions = $policySetDefinitions
     assignments          = $assignments
@@ -174,22 +173,18 @@ $policyPlan = @{
 }
 $rolesPlan = @{
     createdOn       = $timestamp
-    pacOwnerId      = $pacOwnerId
+    pacOwnerId      = $pacEnvironment.pacOwnerId
     roleAssignments = $roleAssignments
 }
-$policyDefinitionsFolder = $pacEnvironment.policyDefinitionsFolder
-$policySetDefinitionsFolder = $pacEnvironment.policySetDefinitionsFolder
-$policyAssignmentsFolder = $pacEnvironment.policyAssignmentsFolder
-$policyExemptionsFolder = $pacEnvironment.policyExemptionsFolder
-$policyExemptionsFolderForPacEnvironment = "$($policyExemptionsFolder)/$($pacEnvironment.pacSelector)"
+$policyExemptionsFolderForPacEnvironment = "$($pacEnvironment.policyExemptionsFolder)/$($pacEnvironment.pacSelector)"
 #endregion plan data structures
 
 #region calculate which plans need to be built
 $warningMessages = [System.Collections.ArrayList]::new()
 $exemptionsAreNotManagedMessage = $null
 $exemptionsAreManaged = $true
-if (!(Test-Path $policyExemptionsFolder -PathType Container)) {
-    $exemptionsAreNotManagedMessage = "Policy Exemptions folder '$policyExemptionsFolder not found. Exemptions not managed by this EPAC instance."
+if (!(Test-Path $pacEnvironment.policyExemptionsFolder -PathType Container)) {
+    $exemptionsAreNotManagedMessage = "Policy Exemptions folder '$($pacEnvironment.policyExemptionsFolder) not found. Exemptions not managed by this EPAC instance."
     $exemptionsAreManaged = $false
 }
 elseif (!(Test-Path $policyExemptionsFolderForPacEnvironment -PathType Container)) {
@@ -208,21 +203,21 @@ $resourceTypes = @(
     @{
         Name                    = "Policy definitions"
         BuildFlag               = "buildPolicyDefinitions"
-        Folder                  = $policyDefinitionsFolder
+        Folder                  = $pacEnvironment.policyDefinitionsFolder
         IncludeInExemptionsOnly = $false
         IncludeInSkipExemptions = $true
     },
     @{
         Name                    = "Policy Set definitions"
         BuildFlag               = "buildPolicySetDefinitions"
-        Folder                  = $policySetDefinitionsFolder
+        Folder                  = $pacEnvironment.policySetDefinitionsFolder
         IncludeInExemptionsOnly = $false
         IncludeInSkipExemptions = $true
     },
     @{
         Name                    = "Policy Assignments"
         BuildFlag               = "buildPolicyAssignments"
-        Folder                  = $policyAssignmentsFolder
+        Folder                  = $pacEnvironment.policyAssignmentsFolder
         IncludeInExemptionsOnly = $false
         IncludeInSkipExemptions = $true
     },
@@ -335,7 +330,7 @@ if ($buildSelections.buildAny) {
         #Write-ModernProgress -Activity "Analyzing Policy Definitions"
         # Process Policies
         Build-PolicyPlan `
-            -DefinitionsRootFolder $policyDefinitionsFolder `
+            -DefinitionsRootFolder $pacEnvironment.policyDefinitionsFolder `
             -PacEnvironment $pacEnvironment `
             -DeployedDefinitions $deployedPolicyResources.policydefinitions `
             -Definitions $policyDefinitions `
@@ -374,7 +369,7 @@ if ($buildSelections.buildAny) {
         #Write-ModernProgress -Activity "Analyzing Policy Set Definitions"
         # Process Policy Sets
         Build-PolicySetPlan `
-            -DefinitionsRootFolder $policySetDefinitionsFolder `
+            -DefinitionsRootFolder $pacEnvironment.policySetDefinitionsFolder `
             -PacEnvironment $pacEnvironment `
             -DeployedDefinitions $deployedPolicyResources.policysetdefinitions `
             -Definitions $policySetDefinitions `
@@ -407,7 +402,7 @@ if ($buildSelections.buildAny) {
         #Write-ModernProgress -Activity "Analyzing Policy Assignments"
         # Process Assignment JSON files
         Build-AssignmentPlan `
-            -AssignmentsRootFolder $policyAssignmentsFolder `
+            -AssignmentsRootFolder $pacEnvironment.policyAssignmentsFolder `
             -PacEnvironment $pacEnvironment `
             -ScopeTable $scopeTable `
             -DeployedPolicyResources $deployedPolicyResources `
@@ -513,35 +508,33 @@ $policyResourceChanges += $assignments.numberOfChanges
 $policyResourceChanges += $exemptions.numberOfChanges
 
 $policyStage = "no"
-$planFile = $pacEnvironment.policyPlanOutputFile
 if ($policyResourceChanges -gt 0) {
-    Write-ModernStatus -Message "Policy deployment plan created: $planFile" -Status "success" -Indent 2
-    if (-not (Test-Path $planFile)) {
-        $null = (New-Item $planFile -Force)
+    Write-ModernStatus -Message "Policy deployment plan created: $($pacEnvironment.policyPlanOutputFile)" -Status "success" -Indent 2
+    if (-not (Test-Path $pacEnvironment.policyPlanOutputFile)) {
+        $null = (New-Item $pacEnvironment.policyPlanOutputFile -Force)
     }
-    $null = $policyPlan | ConvertTo-Json -Depth 100 | Out-File -FilePath $planFile -Force
+    $null = $policyPlan | ConvertTo-Json -Depth 100 | Out-File -FilePath $pacEnvironment.policyPlanOutputFile -Force
     $policyStage = "yes"
 }
 else {
-    if (Test-Path $planFile) {
-        $null = (Remove-Item $planFile)
+    if (Test-Path $pacEnvironment.policyPlanOutputFile) {
+        $null = (Remove-Item $pacEnvironment.policyPlanOutputFile)
     }
     Write-ModernStatus -Message "Policy deployment stage skipped - no changes detected" -Status "skip" -Indent 2
 }
 
 $roleStage = "no"
-$planFile = $pacEnvironment.rolesPlanOutputFile
 if ($roleAssignments.numberOfChanges -gt 0) {
-    Write-ModernStatus -Message "Role assignment plan created: $planFile" -Status "success" -Indent 2
-    if (-not (Test-Path $planFile)) {
-        $null = (New-Item $planFile -Force)
+    Write-ModernStatus -Message "Role assignment plan created: $($pacEnvironment.rolesPlanOutputFile)" -Status "success" -Indent 2
+    if (-not (Test-Path $pacEnvironment.rolesPlanOutputFile)) {
+        $null = (New-Item $pacEnvironment.rolesPlanOutputFile -Force)
     }
-    $null = $rolesPlan | ConvertTo-Json -Depth 100 | Out-File -FilePath $planFile -Force
+    $null = $rolesPlan | ConvertTo-Json -Depth 100 | Out-File -FilePath $pacEnvironment.rolesPlanOutputFile -Force
     $roleStage = "yes"
 }
 else {
-    if (Test-Path $planFile) {
-        $null = (Remove-Item $planFile)
+    if (Test-Path $pacEnvironment.rolesPlanOutputFile) {
+        $null = (Remove-Item $pacEnvironment.rolesPlanOutputFile)
     }
     Write-ModernStatus -Message "Role assignment stage skipped - no changes detected" -Status "skip" -Indent 2
 }
